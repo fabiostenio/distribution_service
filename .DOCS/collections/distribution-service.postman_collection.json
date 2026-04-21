@@ -1,0 +1,320 @@
+{
+  "info": {
+    "name": "distribution-service",
+    "description": "Collection para testes locais do sistema de distribuição de atendimentos da FlowPay.\n\nBase URL: http://localhost:8080\n\nTimes disponíveis: CARTOES | EMPRESTIMOS | OUTROS",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "GET /api/status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "status"]
+            },
+            "description": "Verifica se a aplicação está online e respondendo."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Atendimentos",
+      "item": [
+        {
+          "name": "POST - Cartões (sucesso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assunto\": \"Problema no cartão de crédito\",\n  \"time\": \"CARTOES\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/atendimentos",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos"]
+            },
+            "description": "Cria um atendimento para o time de Cartões.\nEspera-se status ABERTO com agente atribuído (se houver vaga)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Empréstimos (sucesso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assunto\": \"Quero refinanciar meu empréstimo\",\n  \"time\": \"EMPRESTIMOS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/atendimentos",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos"]
+            },
+            "description": "Cria um atendimento para o time de Empréstimos.\nEspera-se status ABERTO com agente atribuído (se houver vaga)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Outros (sucesso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assunto\": \"Dúvida geral sobre minha conta\",\n  \"time\": \"OUTROS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/atendimentos",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos"]
+            },
+            "description": "Cria um atendimento para o time Outros.\nEspera-se status ABERTO com agente atribuído (se houver vaga)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Roteamento automático (sem informar time)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assunto\": \"Problemas com cartão bloqueado\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "O sistema detecta automaticamente o time pelo assunto.\n\"problemas com cartão\" → CARTOES\n\"contratação de empréstimo\" → EMPRESTIMOS\nOutros → OUTROS"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH - Finalizar atendimento",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/atendimentos/1/finalizar",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos", "1", "finalizar"]
+            },
+            "description": "Finaliza o atendimento #1, libera o agente e redistribui automaticamente\no próximo ticket em fila do mesmo time (política FIFO).\n\nAltere o id na URL conforme necessário."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH - Erro: finalizar ticket já finalizado",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/atendimentos/1/finalizar",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos", "1", "finalizar"]
+            },
+            "description": "Deve retornar 422 Unprocessable Entity.\nMensagem esperada: Atendimento #1 não pode ser finalizado pois está com status: FINALIZADO"
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Fila (agentes lotados)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assunto\": \"Ticket para teste de fila — envie após lotar os agentes\",\n  \"time\": \"CARTOES\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/atendimentos",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos"]
+            },
+            "description": "Simula um ticket que deve ir para a fila.\n\nPré-condição: enviar pelo menos 6 tickets para CARTOES antes deste\n(2 agentes × 3 atendimentos = 6 slots disponíveis).\n\nEspera-se: status=FILA e agente=null."
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Erro: assunto vazio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assunto\": \"\",\n  \"time\": \"CARTOES\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/atendimentos",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos"]
+            },
+            "description": "Deve retornar 400 Bad Request.\nMensagem esperada: assunto: O campo 'assunto' é obrigatório."
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Erro: time ausente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assunto\": \"Atendimento sem time informado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/atendimentos",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos"]
+            },
+            "description": "Deve retornar 400 Bad Request.\nMensagem esperada: time: O campo 'time' é obrigatório."
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Erro: time inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assunto\": \"Atendimento com time inválido\",\n  \"time\": \"INEXISTENTE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/atendimentos",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos"]
+            },
+            "description": "Deve retornar 400 Bad Request.\nValores aceitos: CARTOES, EMPRESTIMOS, OUTROS."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cenário: Lotação e Fila (sequencial)",
+      "description": "Execute as requisições desta pasta em ordem para simular a lotação completa do time CARTOES e validar o comportamento da fila.\n\n1 a 6 → devem retornar status ABERTO\n7     → deve retornar status FILA",
+      "item": [
+        {
+          "name": "Cartões #1",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 1\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Cartões #2",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 2\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Cartões #3",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 3\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Cartões #4",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 4\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Cartões #5",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 5\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Cartões #6",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 6\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Cartões #7 → deve ir para FILA",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 7 (fila)\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=FILA e agente=null"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

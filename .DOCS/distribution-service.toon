@@ -1,0 +1,42 @@
+distribution-service.toon
+=========================
+Fintech · Distribuição de Atendimentos · Java 21 + Spring Boot 3 + MySQL 8
+
+SISTEMA
+  3 times: CARTOES | EMPRESTIMOS | OUTROS
+  Regra: max 3 atendimentos simultâneos por agente
+  Excedente: ticket vai para FILA
+
+ENDPOINT PRINCIPAL
+  POST /atendimentos
+  body: { assunto, time }
+  retorno: { id, assunto, status[ABERTO|FILA], agente, time, criadoEm }
+
+ANTI-RACE CONDITION
+  1. Optimistic Locking  → @Version em Agent.java
+                           Hibernate rejeita commit duplicado
+  2. Retry automático    → @Retryable(maxAttempts=3, backoff=50ms*2)
+                           Nova transação a cada tentativa
+  Detalhe: Orchestrator (retry) FORA do Service (transactional) — obrigatório
+
+CAMADAS
+  Controller → Orchestrator(@Retryable) → Service(@Transactional) → Repository
+
+ENTIDADES
+  Team    id | name(enum)
+  Agent   id | name | team | activeTickets | version(@Version)
+  Ticket  id | subject | status | agent | team | createdAt
+
+SEED AUTOMÁTICO (DataInitializer)
+  6 agentes criados na 1ª inicialização (2 por time)
+
+INFRA DOCKER
+  db   mysql:8.0   porta host:3307
+  app  java:21-jre porta host:8080
+  rede interna: distribution-network
+
+MAKEFILE
+  make up/down/clean/logs/logs-app/logs-db/ps/status/db-shell/app-shell
+
+HEALTH
+  GET /api/status → "Backend FlowPay está online e operando!"
