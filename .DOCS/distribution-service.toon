@@ -4,13 +4,26 @@ Fintech · Distribuição de Atendimentos · Java 21 + Spring Boot 3 + MySQL 8
 
 SISTEMA
   3 times: CARTOES | EMPRESTIMOS | OUTROS
+  1 agente por time (3 agentes no total)
   Regra: max 3 atendimentos simultâneos por agente
-  Excedente: ticket vai para FILA
+  4º ticket em diante: vai para FILA
+  Ao finalizar: próximo da fila redistribuído automaticamente (FIFO)
+
+AGENTES
+  CARTOES     → Ana Lima
+  EMPRESTIMOS → Carla Mendes
+  OUTROS      → Eva Rocha
 
 ENDPOINT PRINCIPAL
-  POST /atendimentos
-  body: { assunto, time }
-  retorno: { id, assunto, status[ABERTO|FILA], agente, time, criadoEm }
+  POST  /atendimentos               → cria e distribui (ou enfileira)
+  PATCH /atendimentos/{id}/finalizar → finaliza + redistribui fila
+  body POST: { assunto, time? }     → time é opcional (roteamento automático)
+  retorno: { id, assunto, status[ABERTO|FILA|FINALIZADO], agente, time, criadoEm }
+
+ROTEAMENTO AUTOMÁTICO (sem informar time)
+  "problemas com cartão"       → CARTOES
+  "contratação de empréstimo"  → EMPRESTIMOS
+  qualquer outro assunto        → OUTROS
 
 ANTI-RACE CONDITION
   1. Optimistic Locking  → @Version em Agent.java
@@ -21,14 +34,24 @@ ANTI-RACE CONDITION
 
 CAMADAS
   Controller → Orchestrator(@Retryable) → Service(@Transactional) → Repository
+  Finalizar  → Service(@Transactional) diretamente (sem retry — regra de negócio)
 
 ENTIDADES
   Team    id | name(enum)
   Agent   id | name | team | activeTickets | version(@Version)
   Ticket  id | subject | status | agent | team | createdAt
 
+CÓDIGOS HTTP
+  201 → ticket criado
+  200 → ticket finalizado
+  400 → validação (assunto vazio, time inválido)
+  404 → ticket/time não encontrado
+  422 → tentativa de finalizar ticket não ABERTO
+  409 → conflito de concorrência após 3 retries
+
 SEED AUTOMÁTICO (DataInitializer)
-  6 agentes criados na 1ª inicialização (2 por time)
+  3 agentes criados na 1ª inicialização (1 por time)
+  Idempotente: não recria se já existir
 
 INFRA DOCKER
   db   mysql:8.0   porta host:3307

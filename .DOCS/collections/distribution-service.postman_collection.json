@@ -315,6 +315,43 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "GET /dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard"]
+            },
+            "description": "Retorna snapshot completo do sistema para uso em frontend.\n\nCampos retornados:\n- geradoEm: timestamp da consulta\n- resumo: totais gerais (tickets por status, agentes disponíveis/ocupados)\n- times[]: breakdown por time com agentes e contagens por status\n- fila: total em fila, ticket mais antigo, tempo máximo e médio de espera, breakdown por time"
+          },
+          "response": [
+            {
+              "name": "200 - Dashboard completo",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard",
+                  "host": ["{{base_url}}"],
+                  "path": ["dashboard"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"geradoEm\": \"2026-04-21T22:50:59.611125\",\n  \"resumo\": {\n    \"totalTickets\": 4,\n    \"abertos\": 3,\n    \"emFila\": 1,\n    \"finalizados\": 0,\n    \"totalAgentes\": 3,\n    \"agentesDisponiveis\": 2,\n    \"agentesOcupados\": 1\n  },\n  \"times\": [\n    {\n      \"time\": \"CARTOES\",\n      \"abertos\": 3,\n      \"emFila\": 1,\n      \"finalizados\": 0,\n      \"totalAtendimentos\": 4,\n      \"agentes\": [\n        {\n          \"id\": 1,\n          \"nome\": \"Ana Lima\",\n          \"atendimentosAtivos\": 3,\n          \"disponivel\": false,\n          \"capacidadeMaxima\": 3\n        }\n      ]\n    }\n  ],\n  \"fila\": {\n    \"totalEmFila\": 1,\n    \"ticketMaisAntigoEm\": \"2026-04-21T22:44:19.231454\",\n    \"tempoEsperaMaximoMinutos\": 6,\n    \"tempoEsperaMedioMinutos\": 6.0,\n    \"porTime\": [\n      { \"time\": \"CARTOES\", \"emFila\": 1, \"ticketMaisAntigoEm\": \"2026-04-21T22:44:19.231454\" },\n      { \"time\": \"EMPRESTIMOS\", \"emFila\": 0, \"ticketMaisAntigoEm\": null },\n      { \"time\": \"OUTROS\", \"emFila\": 0, \"ticketMaisAntigoEm\": null }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

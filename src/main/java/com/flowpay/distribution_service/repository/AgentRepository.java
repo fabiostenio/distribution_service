@@ -4,6 +4,7 @@ import com.flowpay.distribution_service.entity.Agent;
 import com.flowpay.distribution_service.entity.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface AgentRepository extends JpaRepository<Agent, Long> {
@@ -15,4 +16,8 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
      */
     Optional<Agent> findFirstByTeamAndActiveTicketsLessThanOrderByActiveTicketsAsc(
             Team team, int maxTickets);
+
+    List<Agent> findByTeam(Team team);
+
+    long countByActiveTicketsLessThan(int maxTickets);
 }

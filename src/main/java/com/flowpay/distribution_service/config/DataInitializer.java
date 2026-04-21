@@ -41,11 +41,8 @@ public class DataInitializer implements CommandLineRunner {
 
         List<Agent> agents = List.of(
                 Agent.builder().name("Ana Lima").team(cartoes).build(),
-                Agent.builder().name("Bruno Souza").team(cartoes).build(),
                 Agent.builder().name("Carla Mendes").team(emprestimos).build(),
-                Agent.builder().name("Diego Ferreira").team(emprestimos).build(),
-                Agent.builder().name("Eva Rocha").team(outros).build(),
-                Agent.builder().name("Felipe Nunes").team(outros).build()
+                Agent.builder().name("Eva Rocha").team(outros).build()
         );
         agentRepository.saveAll(agents);
 

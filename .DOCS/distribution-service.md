@@ -132,15 +132,16 @@ Backend FlowPay está online e operando!
 
 ### Times e Agentes iniciais
 
-| Time        | Agentes                      |
-|-------------|------------------------------|
-| CARTOES     | Ana Lima, Bruno Souza        |
-| EMPRESTIMOS | Carla Mendes, Diego Ferreira |
-| OUTROS      | Eva Rocha, Felipe Nunes      |
+| Time        | Agente        | Capacidade máxima  |
+|-------------|---------------|--------------------|
+| CARTOES     | Ana Lima      | 3 simultâneos      |
+| EMPRESTIMOS | Carla Mendes  | 3 simultâneos      |
+| OUTROS      | Eva Rocha     | 3 simultâneos      |
 
 ### Regra de negócio
 - Cada agente suporta no máximo **3 atendimentos simultâneos**
-- Tickets excedentes são registrados com `status = FILA`
+- O **4º ticket** de um time sem agente disponível entra automaticamente na fila
+- Ao finalizar um atendimento, o próximo ticket em fila é redistribuído imediatamente (FIFO)
 - A distribuição prioriza o agente com **menos atendimentos ativos** no time
 
 ---
