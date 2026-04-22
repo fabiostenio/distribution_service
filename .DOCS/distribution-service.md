@@ -14,18 +14,26 @@ com.flowpay.distribution_service/
 ├── config/
 │   └── DataInitializer.java          # Seed inicial de times e agentes
 ├── controller/
-│   ├── AtendimentoController.java    # POST /atendimentos
+│   ├── AtendimentoController.java    # POST /atendimentos, PATCH /atendimentos/{id}/finalizar
+│   ├── DashboardController.java      # GET /dashboard
 │   └── StatusController.java         # GET /api/status
 ├── dto/
 │   ├── AtendimentoRequest.java       # Payload de entrada
-│   └── AtendimentoResponse.java      # Payload de saída
+│   ├── AtendimentoResponse.java      # Payload de saída (inclui posicaoFila)
+│   └── dashboard/
+│       ├── DashboardResponse.java    # Envelope raiz do dashboard
+│       ├── ResumoGeralDto.java       # Totais globais
+│       ├── TimeDashboardDto.java     # Breakdown por time
+│       ├── AgenteDashboardDto.java   # Estado de cada agente
+│       └── FilaDashboardDto.java     # Métricas de fila
 ├── entity/
 │   ├── Agent.java                    # Entidade agente com Optimistic Locking
 │   ├── Team.java                     # Entidade time
 │   └── Ticket.java                   # Entidade ticket
 ├── enums/
+│   ├── TeamKeyword.java              # Roteamento automático por assunto
 │   ├── TeamName.java                 # CARTOES | EMPRESTIMOS | OUTROS
-│   └── TicketStatus.java             # ABERTO | FILA
+│   └── TicketStatus.java             # ABERTO | FILA | FINALIZADO
 ├── exception/
 │   └── GlobalExceptionHandler.java   # Tratamento centralizado de erros
 ├── repository/
@@ -33,8 +41,9 @@ com.flowpay.distribution_service/
 │   ├── TeamRepository.java
 │   └── TicketRepository.java
 └── service/
+    ├── DashboardService.java          # Lógica de estatísticas para o dashboard
     ├── DistributionOrchestrator.java  # Camada de Retry (@Retryable)
-    └── DistributionService.java       # Lógica de distribuição (@Transactional)
+    └── DistributionService.java       # Lógica de distribuição e finalização (@Transactional)
 ```
 
 ---
@@ -95,17 +104,34 @@ Valores válidos para `time`: `CARTOES`, `EMPRESTIMOS`, `OUTROS`
 }
 ```
 
-**Response 201 — Sem agentes disponíveis:**
+O campo `time` é **opcional**: se omitido, o sistema roteia automaticamente pelo conteúdo do `assunto` (ver [Roteamento Automático](#-roteamento-automático)).
+
+**Response 201 — Agente disponível:**
 ```json
 {
-  "id": 8,
+  "id": 1,
+  "assunto": "Problema no cartão de crédito",
+  "status": "ABERTO",
+  "agente": "Ana Lima",
+  "posicaoFila": null,
+  "time": "CARTOES",
+  "criadoEm": "2026-04-21T17:30:20.021536"
+}
+```
+
+**Response 201 — Sem agentes disponíveis (ticket entra na fila):**
+```json
+{
+  "id": 5,
   "assunto": "Ticket que deve ir pra fila",
   "status": "FILA",
   "agente": null,
+  "posicaoFila": 2,
   "time": "CARTOES",
   "criadoEm": "2026-04-21T17:30:30.426857"
 }
 ```
+> `posicaoFila` indica a posição do ticket na fila **do seu time**. Retorna `null` quando `status=ABERTO` ou `status=FINALIZADO`.
 
 **Response 400 — Validação:**
 ```json
@@ -116,11 +142,112 @@ Valores válidos para `time`: `CARTOES`, `EMPRESTIMOS`, `OUTROS`
 }
 ```
 
+---
+
+### `PATCH /atendimentos/{id}/finalizar`
+Finaliza um atendimento ativo, libera o slot do agente e redistribui automaticamente o próximo ticket em fila do mesmo time (política FIFO).
+
+**Response 200:**
+```json
+{
+  "id": 1,
+  "assunto": "Problema no cartão de crédito",
+  "status": "FINALIZADO",
+  "agente": "Ana Lima",
+  "posicaoFila": null,
+  "time": "CARTOES",
+  "criadoEm": "2026-04-21T17:30:20.021536"
+}
+```
+
+**Response 404 — Ticket não encontrado:**
+```json
+{ "status": 404, "erro": "Atendimento #99 não encontrado." }
+```
+
+**Response 422 — Ticket não está ABERTO:**
+```json
+{ "status": 422, "erro": "Atendimento #1 não pode ser finalizado pois está com status: FINALIZADO" }
+```
+
+---
+
+### `GET /dashboard`
+Retorna um snapshot completo do sistema em tempo real para consumo por frontends.
+
+**Response 200:**
+```json
+{
+  "geradoEm": "2026-04-21T22:50:59.611125",
+  "resumo": {
+    "totalTickets": 5,
+    "abertos": 3,
+    "emFila": 2,
+    "finalizados": 0,
+    "totalAgentes": 3,
+    "agentesDisponiveis": 2,
+    "agentesOcupados": 1
+  },
+  "times": [
+    {
+      "time": "CARTOES",
+      "abertos": 3,
+      "emFila": 2,
+      "finalizados": 0,
+      "totalAtendimentos": 5,
+      "agentes": [
+        {
+          "id": 1,
+          "nome": "Ana Lima",
+          "atendimentosAtivos": 3,
+          "disponivel": false,
+          "capacidadeMaxima": 3
+        }
+      ]
+    }
+  ],
+  "fila": {
+    "totalEmFila": 2,
+    "ticketMaisAntigoEm": "2026-04-21T22:44:19.231454",
+    "tempoEsperaMaximoMinutos": 6,
+    "tempoEsperaMedioMinutos": 5.5,
+    "porTime": [
+      { "time": "CARTOES", "emFila": 2, "ticketMaisAntigoEm": "2026-04-21T22:44:19.231454" },
+      { "time": "EMPRESTIMOS", "emFila": 0, "ticketMaisAntigoEm": null },
+      { "time": "OUTROS", "emFila": 0, "ticketMaisAntigoEm": null }
+    ]
+  }
+}
+```
+
+| Campo | Descrição |
+|---|---|
+| `resumo.agentesDisponiveis` | Agentes com menos de 3 atendimentos ativos |
+| `fila.ticketMaisAntigoEm` | Data de criação do ticket mais antigo em fila |
+| `fila.tempoEsperaMaximoMinutos` | Minutos de espera do ticket mais antigo |
+| `fila.tempoEsperaMedioMinutos` | Média de espera de todos os tickets em fila |
+
+---
+
 ### `GET /api/status`
 Health check da aplicação.
 ```
 Backend FlowPay está online e operando!
 ```
+
+---
+
+## 🔀 Roteamento Automático
+
+O campo `time` no `POST /atendimentos` é opcional. Quando omitido, o sistema analisa o conteúdo do `assunto` para determinar o time:
+
+| Keyword detectada (case-insensitive) | Time roteado |
+|---|---|
+| `problemas com cartão` | `CARTOES` |
+| `contratação de empréstimo` | `EMPRESTIMOS` |
+| *(qualquer outro assunto)* | `OUTROS` |
+
+Implementado em `TeamKeyword.java` via `TeamKeyword.resolve(String subject)`.
 
 ---
 
@@ -175,20 +302,21 @@ Ambos os containers se comunicam via rede interna `distribution-network`.
 ## 🧪 Testes manuais via curl
 
 ```bash
-# Criar atendimento — time Cartões
+# Criar atendimento — time explícito
 curl -s -X POST http://localhost:8080/atendimentos \
   -H "Content-Type: application/json" \
   -d '{"assunto":"Problema no cartão","time":"CARTOES"}'
 
-# Criar atendimento — time Empréstimos
+# Criar atendimento — roteamento automático (sem time)
 curl -s -X POST http://localhost:8080/atendimentos \
   -H "Content-Type: application/json" \
-  -d '{"assunto":"Refinanciamento","time":"EMPRESTIMOS"}'
+  -d '{"assunto":"Problemas com cartão bloqueado"}'
 
-# Criar atendimento — time Outros
-curl -s -X POST http://localhost:8080/atendimentos \
-  -H "Content-Type: application/json" \
-  -d '{"assunto":"Dúvida geral","time":"OUTROS"}'
+# Finalizar atendimento #1 (libera agente e redistribui fila)
+curl -s -X PATCH http://localhost:8080/atendimentos/1/finalizar
+
+# Dashboard completo
+curl -s http://localhost:8080/dashboard | python3 -m json.tool
 
 # Health check
 curl http://localhost:8080/api/status

@@ -26,4 +26,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     @Query("SELECT AVG(TIMESTAMPDIFF(SECOND, t.createdAt, CURRENT_TIMESTAMP) / 60.0) FROM Ticket t WHERE t.status = :status")
     Double avgWaitMinutesByStatus(TicketStatus status);
+
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.team = :team AND t.status = 'FILA' AND t.createdAt <= :createdAt")
+    long countQueuePositionByTeamAndCreatedAt(Team team, java.time.LocalDateTime createdAt);
 }

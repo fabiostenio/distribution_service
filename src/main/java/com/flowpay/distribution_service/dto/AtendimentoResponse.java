@@ -18,6 +18,9 @@ public class AtendimentoResponse {
     /** Nome do agente atribuído, ou null se o ticket está em fila. */
     private String agente;
 
+    /** Posição na fila do time. Preenchido apenas quando status=FILA; null caso contrário. */
+    private Long posicaoFila;
+
     private String time;
     private LocalDateTime criadoEm;
 }

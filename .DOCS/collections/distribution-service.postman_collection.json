@@ -157,14 +157,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"assunto\": \"Ticket para teste de fila — envie após lotar os agentes\",\n  \"time\": \"CARTOES\"\n}"
+              "raw": "{\n  \"assunto\": \"Ticket para teste de fila — envie após lotar o agente\",\n  \"time\": \"CARTOES\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/atendimentos",
               "host": ["{{base_url}}"],
               "path": ["atendimentos"]
             },
-            "description": "Simula um ticket que deve ir para a fila.\n\nPré-condição: enviar pelo menos 6 tickets para CARTOES antes deste\n(2 agentes × 3 atendimentos = 6 slots disponíveis).\n\nEspera-se: status=FILA e agente=null."
+            "description": "Simula um ticket que deve ir para a fila.\n\nPré-condição: enviar pelo menos 3 tickets para CARTOES antes deste\n(1 agente × 3 atendimentos = 3 slots disponíveis).\n\nEspera-se: status=FILA, agente=null, posicaoFila=1."
           },
           "response": []
         },
@@ -240,77 +240,264 @@
       ]
     },
     {
-      "name": "Cenário: Lotação e Fila (sequencial)",
-      "description": "Execute as requisições desta pasta em ordem para simular a lotação completa do time CARTOES e validar o comportamento da fila.\n\n1 a 6 → devem retornar status ABERTO\n7     → deve retornar status FILA",
+      "name": "Cenário: Lotação e Fila — CARTOES (sequencial)",
+      "description": "Execute as requisições em ordem para simular a lotação completa do time CARTOES.\n\nRegra: 1 agente × 3 slots = 3 atendimentos simultâneos.\n\n#1 a #3 → status ABERTO, posicaoFila=null\n#4      → status FILA,  posicaoFila=1\n#5      → status FILA,  posicaoFila=2",
       "item": [
         {
-          "name": "Cartões #1",
+          "name": "CARTOES #1 → ABERTO",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 1\",\n  \"time\": \"CARTOES\"\n}" },
-            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=ABERTO, agente=Ana Lima, posicaoFila=null"
           },
           "response": []
         },
         {
-          "name": "Cartões #2",
+          "name": "CARTOES #2 → ABERTO",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 2\",\n  \"time\": \"CARTOES\"\n}" },
-            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=ABERTO, agente=Ana Lima, posicaoFila=null"
           },
           "response": []
         },
         {
-          "name": "Cartões #3",
+          "name": "CARTOES #3 → ABERTO (slot máximo)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 3\",\n  \"time\": \"CARTOES\"\n}" },
-            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
-          },
-          "response": []
-        },
-        {
-          "name": "Cartões #4",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 4\",\n  \"time\": \"CARTOES\"\n}" },
-            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
-          },
-          "response": []
-        },
-        {
-          "name": "Cartões #5",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 5\",\n  \"time\": \"CARTOES\"\n}" },
-            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
-          },
-          "response": []
-        },
-        {
-          "name": "Cartões #6",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 6\",\n  \"time\": \"CARTOES\"\n}" },
-            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] }
-          },
-          "response": []
-        },
-        {
-          "name": "Cartões #7 → deve ir para FILA",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 7 (fila)\",\n  \"time\": \"CARTOES\"\n}" },
             "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
-            "description": "Espera-se: status=FILA e agente=null"
+            "description": "Espera-se: status=ABERTO, agente=Ana Lima, posicaoFila=null\nAgente Ana Lima atinge capacidade máxima (3/3)."
+          },
+          "response": []
+        },
+        {
+          "name": "CARTOES #4 → FILA posição 1",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 4 (fila)\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=FILA, agente=null, posicaoFila=1\nNenhum agente disponível no time CARTOES."
+          },
+          "response": []
+        },
+        {
+          "name": "CARTOES #5 → FILA posição 2",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Cartões - ticket 5 (fila)\",\n  \"time\": \"CARTOES\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=FILA, agente=null, posicaoFila=2"
+          },
+          "response": []
+        },
+        {
+          "name": "CARTOES — Finalizar #1 (libera fila)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/atendimentos/1/finalizar",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos", "1", "finalizar"]
+            },
+            "description": "Finaliza o ticket #1. O ticket #4 (posição 1 da fila) deve ser automaticamente promovido para ABERTO.\n\nAjuste o id conforme o retorno dos passos anteriores."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cenário: Lotação e Fila — EMPRESTIMOS (sequencial)",
+      "description": "Execute as requisições em ordem para simular a lotação completa do time EMPRESTIMOS.\n\nRegra: 1 agente × 3 slots = 3 atendimentos simultâneos.\n\n#1 a #3 → status ABERTO, posicaoFila=null\n#4      → status FILA,  posicaoFila=1\n#5      → status FILA,  posicaoFila=2",
+      "item": [
+        {
+          "name": "EMPRESTIMOS #1 → ABERTO",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Empréstimos - ticket 1\",\n  \"time\": \"EMPRESTIMOS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=ABERTO, agente=Carla Mendes, posicaoFila=null"
+          },
+          "response": []
+        },
+        {
+          "name": "EMPRESTIMOS #2 → ABERTO",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Empréstimos - ticket 2\",\n  \"time\": \"EMPRESTIMOS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=ABERTO, agente=Carla Mendes, posicaoFila=null"
+          },
+          "response": []
+        },
+        {
+          "name": "EMPRESTIMOS #3 → ABERTO (slot máximo)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Empréstimos - ticket 3\",\n  \"time\": \"EMPRESTIMOS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=ABERTO, agente=Carla Mendes, posicaoFila=null\nAgente Carla Mendes atinge capacidade máxima (3/3)."
+          },
+          "response": []
+        },
+        {
+          "name": "EMPRESTIMOS #4 → FILA posição 1",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Empréstimos - ticket 4 (fila)\",\n  \"time\": \"EMPRESTIMOS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=FILA, agente=null, posicaoFila=1\nNenhum agente disponível no time EMPRESTIMOS."
+          },
+          "response": []
+        },
+        {
+          "name": "EMPRESTIMOS #5 → FILA posição 2",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Empréstimos - ticket 5 (fila)\",\n  \"time\": \"EMPRESTIMOS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=FILA, agente=null, posicaoFila=2"
+          },
+          "response": []
+        },
+        {
+          "name": "EMPRESTIMOS — Finalizar #1 (libera fila)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/atendimentos/1/finalizar",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos", "1", "finalizar"]
+            },
+            "description": "Finaliza o ticket #1 do time EMPRESTIMOS. O ticket #4 (posição 1 da fila) deve ser automaticamente promovido para ABERTO.\n\nAjuste o id conforme o retorno dos passos anteriores."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cenário: Lotação e Fila — OUTROS (sequencial)",
+      "description": "Execute as requisições em ordem para simular a lotação completa do time OUTROS.\n\nRegra: 1 agente × 3 slots = 3 atendimentos simultâneos.\n\n#1 a #3 → status ABERTO, posicaoFila=null\n#4      → status FILA,  posicaoFila=1\n#5      → status FILA,  posicaoFila=2",
+      "item": [
+        {
+          "name": "OUTROS #1 → ABERTO",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Outros - ticket 1\",\n  \"time\": \"OUTROS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=ABERTO, agente=Eva Rocha, posicaoFila=null"
+          },
+          "response": []
+        },
+        {
+          "name": "OUTROS #2 → ABERTO",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Outros - ticket 2\",\n  \"time\": \"OUTROS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=ABERTO, agente=Eva Rocha, posicaoFila=null"
+          },
+          "response": []
+        },
+        {
+          "name": "OUTROS #3 → ABERTO (slot máximo)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Outros - ticket 3\",\n  \"time\": \"OUTROS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=ABERTO, agente=Eva Rocha, posicaoFila=null\nAgente Eva Rocha atinge capacidade máxima (3/3)."
+          },
+          "response": []
+        },
+        {
+          "name": "OUTROS #4 → FILA posição 1",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Outros - ticket 4 (fila)\",\n  \"time\": \"OUTROS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=FILA, agente=null, posicaoFila=1\nNenhum agente disponível no time OUTROS."
+          },
+          "response": []
+        },
+        {
+          "name": "OUTROS #5 → FILA posição 2",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Outros - ticket 5 (fila)\",\n  \"time\": \"OUTROS\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Espera-se: status=FILA, agente=null, posicaoFila=2"
+          },
+          "response": []
+        },
+        {
+          "name": "OUTROS — Finalizar #1 (libera fila)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/atendimentos/1/finalizar",
+              "host": ["{{base_url}}"],
+              "path": ["atendimentos", "1", "finalizar"]
+            },
+            "description": "Finaliza o ticket #1 do time OUTROS. O ticket #4 (posição 1 da fila) deve ser automaticamente promovido para ABERTO.\n\nAjuste o id conforme o retorno dos passos anteriores."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cenário: Roteamento Automático por Assunto (sequencial)",
+      "description": "Valida que o sistema roteia corretamente pelo assunto sem informar o campo 'time'.\n\nKeywords mapeadas:\n- \"problemas com cartão\" → CARTOES  (agente: Ana Lima)\n- \"contratação de empréstimo\" → EMPRESTIMOS  (agente: Carla Mendes)\n- qualquer outro assunto → OUTROS  (agente: Eva Rocha)",
+      "item": [
+        {
+          "name": "Roteamento → CARTOES",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Estou com problemas com cartão bloqueado\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Sem campo 'time'. Keyword 'problemas com cartão' detectada.\nEspera-se: time=CARTOES, agente=Ana Lima, status=ABERTO, posicaoFila=null"
+          },
+          "response": []
+        },
+        {
+          "name": "Roteamento → EMPRESTIMOS",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Quero fazer a contratação de empréstimo pessoal\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Sem campo 'time'. Keyword 'contratação de empréstimo' detectada.\nEspera-se: time=EMPRESTIMOS, agente=Carla Mendes, status=ABERTO, posicaoFila=null"
+          },
+          "response": []
+        },
+        {
+          "name": "Roteamento → OUTROS (fallback)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assunto\": \"Preciso atualizar meu endereço de cadastro\"\n}" },
+            "url": { "raw": "{{base_url}}/atendimentos", "host": ["{{base_url}}"], "path": ["atendimentos"] },
+            "description": "Sem campo 'time'. Nenhuma keyword reconhecida → fallback OUTROS.\nEspera-se: time=OUTROS, agente=Eva Rocha, status=ABERTO, posicaoFila=null"
           },
           "response": []
         }

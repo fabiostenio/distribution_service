@@ -17,8 +17,10 @@ AGENTES
 ENDPOINT PRINCIPAL
   POST  /atendimentos               → cria e distribui (ou enfileira)
   PATCH /atendimentos/{id}/finalizar → finaliza + redistribui fila
+  GET   /dashboard                  → snapshot completo para frontend
   body POST: { assunto, time? }     → time é opcional (roteamento automático)
-  retorno: { id, assunto, status[ABERTO|FILA|FINALIZADO], agente, time, criadoEm }
+  retorno: { id, assunto, status[ABERTO|FILA|FINALIZADO], agente, posicaoFila, time, criadoEm }
+  posicaoFila: número inteiro (1-based) quando status=FILA; null nos demais casos
 
 ROTEAMENTO AUTOMÁTICO (sem informar time)
   "problemas com cartão"       → CARTOES
@@ -48,6 +50,13 @@ CÓDIGOS HTTP
   404 → ticket/time não encontrado
   422 → tentativa de finalizar ticket não ABERTO
   409 → conflito de concorrência após 3 retries
+
+DASHBOARD (GET /dashboard)
+  resumo           → totalTickets, abertos, emFila, finalizados, totalAgentes, disponíveis, ocupados
+  times[]          → por time: abertos, emFila, finalizados, totalAtendimentos, agentes[]
+  agentes[]        → id, nome, atendimentosAtivos, disponivel, capacidadeMaxima
+  fila             → totalEmFila, ticketMaisAntigoEm, tempoEsperaMaximoMinutos, tempoEsperaMedioMinutos
+  fila.porTime[]   → breakdown da fila por time com ticketMaisAntigoEm
 
 SEED AUTOMÁTICO (DataInitializer)
   3 agentes criados na 1ª inicialização (1 por time)

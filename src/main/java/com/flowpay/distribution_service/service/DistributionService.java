@@ -131,11 +131,17 @@ public class DistributionService {
     }
 
     private AtendimentoResponse toResponse(Ticket ticket) {
+        Long posicaoFila = null;
+        if (ticket.getStatus() == TicketStatus.FILA) {
+            posicaoFila = ticketRepository.countQueuePositionByTeamAndCreatedAt(
+                    ticket.getTeam(), ticket.getCreatedAt());
+        }
         return AtendimentoResponse.builder()
                 .id(ticket.getId())
                 .assunto(ticket.getSubject())
                 .status(ticket.getStatus().name())
                 .agente(ticket.getAgent() != null ? ticket.getAgent().getName() : null)
+                .posicaoFila(posicaoFila)
                 .time(ticket.getTeam().getName().name())
                 .criadoEm(ticket.getCreatedAt())
                 .build();
